@@ -648,6 +648,37 @@ public void onGeolocationPermissionsHidePrompt()
 public void openFileChooser(ValueCallback<Uri> uploadFile, String acceptType, String capture)  
 这个回调是私有回调， 当页面需要请求打开系统的文件选择器，则会回调这个方法，比如我们需要上传图片，请求拍照，邮件的附件上传等等操作。
 如果不实现这个私有API，则上面的请求都将不会执行。
+一个普通网页的加载cache会被检查，内容也会被重新校验，第一次访问网页时，会存储cache到本地，设置策略可以让网页加载方式发生变化，cache模式有如下几种:
+LOAD_DEFAULT: 如果我们应用程序没有设置任何cachemode， 这个是默认的cache方式。 加载一张网页会检查是否有cache，如果有并且没有过期则使用本地cache，否则                                   从网络上获取。
+LOAD_CACHE_ELSE_NETWORK: 使用cache资源，即使过期了也使用，如果没有cache才从网络上获取。
+LOAD_NO_CACHE: 不使用cache 全部从网络上获取
+LOAD_CACHE_ONLY:  只使用cache上的内容。
+
+[java] view plaincopy在CODE上查看代码片派生到我的代码片
+public void setLoadWithOverviewMode(boolean overview)  
+概览模式的设置，默认指是false。
+
+[java] view plaincopy在CODE上查看代码片派生到我的代码片
+public synchronized void setJavaScriptEnabled (boolean flag)  
+默认值是false.  如果我们网页需要javascript时，需要开启这个设置，否则网页加载不全。
+
+2.WebSettings Webkit中的实现
+    WebSeetings 的API在Android 系统各个版本变化不大只是增加API或者deprecate一些API，但其内部是实现在不同版本中确有些差异，目前主流android系统版本主要为Android 4.0以上，分析4.0以上各系统版本得出webseetings的实现分为三块Android 4.0, Android 4.1---4.3,Android 4.4。下面分析下Android 以上各版本间的实现：
+
+1）Android 4.0系统 主要分为两部分，一部分是API层，另一部分Settings的存储位置。
+    Settings存储位置大部分的setting最终设置到WebCore当中的Settings.cpp， 比如javaScriptEnable等
+    还有一部分根据模块相关存储在模块内部，比如CacheMode存储在FrameLoader当中。
+2）Android 4.1--4.3系统对WebView的 framework进行重构，WebSettings相应也跟着变化。
+      中间引入了桥阶层WebSettingsClassc。
+ Settings存储位置大部分的setting最终设置到WebCore当中的Settings.cpp， 比如javaScriptEnable等
+   还有一部分跟平台相关的存储在WebCoreSupport层相应模块中，比如在4.1---4.3上CacheMode存储在WebRequestContext
+
+
+
+在Android 4.4上WebView底层实现换成了chromium，为了兼容老的WebSettings的接口，Android 4.4做了chromium 的桥阶层，主要涉及的WebSettings相关代码在
+ContentSettingsAdapter,AwSettings中。
+和前面的一些版本相同的是大部分settings还是存储在Webkit的Settings.cpp中，这边简单介绍下chromium 使用的blink渲染引擎，而blink是从webkit当中剥离出来的，还保留了webkit的parsing等。因此和我们之前看到的Settings.cpp存储在WebCore目录，目录结构会有所不同。
+还有一部分settings在Android 4.4上存储方式也是存储在platform porting层。 下面是一个关于cachemode这个设置的分析:
 
 
 
